@@ -143,10 +143,25 @@ SocketIoEngine.prototype.step = function (requestSpec, ee) {
     );
   }
 
+  let fWaitFor = function(context, callback) {
+    debug({ requestSpec }, 'fWaitFor');
+
+    let socketio = context.sockets[requestSpec.namespace] || null;
+    const eventName = requestSpec.waitFor;
+
+    socketio.once(eventName, function() {
+      debug({ eventName }, 'fWaitFor triggered');
+      callback(null, context);
+    });
+  }
+
   let f = function(context, callback) {
     // Only process emit requests; delegate the rest to the HTTP engine (or think utility)
     if (requestSpec.think) {
       return engineUtil.createThink(requestSpec, _.get(self.config, 'defaults.think', {}));
+    }
+    if (requestSpec.waitFor) {
+      return fWaitFor(context, callback);
     }
     if (!requestSpec.emit) {
       let delegateFunc = self.httpDelegate.step(requestSpec, ee);
@@ -270,7 +285,7 @@ SocketIoEngine.prototype.step = function (requestSpec, ee) {
     });
   }
 
-  if(requestSpec.emit) {
+  if(requestSpec.emit || requestSpec.waitFor) {
     return preStep;
   } else {
     return f;
