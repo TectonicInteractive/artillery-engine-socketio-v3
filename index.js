@@ -151,6 +151,8 @@ SocketIoEngine.prototype.step = function (requestSpec, ee) {
 
     socketio.once(eventName, function() {
       debug({ eventName }, 'fWaitFor triggered');
+      ee.emit('counter', `engine.socketio.broadcast.${eventName}`, 1);
+      ee.emit('histogram', `engine.socketio.broadcast.${eventName}`, Date.now());
       callback(null, context);
     });
   }
